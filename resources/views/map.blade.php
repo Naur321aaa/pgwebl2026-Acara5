@@ -3,7 +3,10 @@
 @section('styles')
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+    {{-- Leaflet Draw CSS --}}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css">
+
     <style>
         #map {
             height: 800px;
@@ -11,10 +14,10 @@
     </style>
 @endsection
 
+
 @section('content')
     <div id="map"></div>
 
-    {{-- Modal Form Input Point --}}
     <div class="modal" tabindex="-1" id="modalInputPoint">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -26,17 +29,17 @@
                     @csrf
                     <div class="modal-body">
                         <div class="mb-3">
-                            <label for="point_name" class="form-label">Name</label>
-                            <input type="text" class="form-control" id="point_name" name="name"
+                            <label for="name" class="form-label">Name</label>
+                            <input type="text" class="form-control" id="name" name="name"
                                 placeholder="Fill name">
                         </div>
                         <div class="mb-3">
-                            <label for="point_description" class="form-label">Description</label>
-                            <textarea class="form-control" id="point_description" name="description" rows="3"></textarea>
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
                         </div>
                         <div class="mb-3">
                             <label for="geometry_point" class="form-label">Geometry</label>
-                            <textarea class="form-control" id="geometry_point" name="geometry_point" rows="3" readonly></textarea>
+                            <textarea class="form-control" id="geometry_point" name="geometry_point" rows="3"></textarea>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -48,7 +51,6 @@
         </div>
     </div>
 
-    {{-- Modal Form Input Polyline --}}
     <div class="modal" tabindex="-1" id="modalInputPolyline">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -60,17 +62,17 @@
                     @csrf
                     <div class="modal-body">
                         <div class="mb-3">
-                            <label for="polyline_name" class="form-label">Name</label>
-                            <input type="text" class="form-control" id="polyline_name" name="name"
+                            <label for="name" class="form-label">Name</label>
+                            <input type="text" class="form-control" id="name" name="name"
                                 placeholder="Fill name">
                         </div>
                         <div class="mb-3">
-                            <label for="polyline_description" class="form-label">Description</label>
-                            <textarea class="form-control" id="polyline_description" name="description" rows="3"></textarea>
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
                         </div>
                         <div class="mb-3">
                             <label for="geometry_polyline" class="form-label">Geometry</label>
-                            <textarea class="form-control" id="geometry_polyline" name="geometry_polyline" rows="3" readonly></textarea>
+                            <textarea class="form-control" id="geometry_polyline" name="geometry_polyline" rows="3"></textarea>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -82,7 +84,6 @@
         </div>
     </div>
 
-    {{-- Modal Form Input Polygon --}}
     <div class="modal" tabindex="-1" id="modalInputPolygon">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -94,17 +95,17 @@
                     @csrf
                     <div class="modal-body">
                         <div class="mb-3">
-                            <label for="polygon_name" class="form-label">Name</label>
-                            <input type="text" class="form-control" id="polygon_name" name="name"
+                            <label for="name" class="form-label">Name</label>
+                            <input type="text" class="form-control" id="name" name="name"
                                 placeholder="Fill name">
                         </div>
                         <div class="mb-3">
-                            <label for="polygon_description" class="form-label">Description</label>
-                            <textarea class="form-control" id="polygon_description" name="description" rows="3"></textarea>
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
                         </div>
                         <div class="mb-3">
                             <label for="geometry_polygon" class="form-label">Geometry</label>
-                            <textarea class="form-control" id="geometry_polygon" name="geometry_polygon" rows="3" readonly></textarea>
+                            <textarea class="form-control" id="geometry_polygon" name="geometry_polygon" rows="3"></textarea>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -120,8 +121,14 @@
 @section('scripts')
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    {{-- Leaflet Draw JS --}}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+
+    {{-- Terraformer JS --}}
     <script src="https://unpkg.com/@terraformer/wkt"></script>
+
+    {{-- JQuery JS --}}
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
     <script>
@@ -132,6 +139,7 @@
             attribution: '© OpenStreetMap'
         }).addTo(map);
 
+        /* Digitize Function */
         var drawnItems = new L.FeatureGroup();
         map.addLayer(drawnItems);
 
@@ -147,62 +155,151 @@
             },
             edit: false
         });
+
         map.addControl(drawControl);
 
         map.on('draw:created', function(e) {
             var type = e.layerType,
                 layer = e.layer;
 
+            console.log(type);
+
             var drawnJSONObject = layer.toGeoJSON();
             var objectGeometry = Terraformer.geojsonToWKT(drawnJSONObject.geometry);
 
+            console.log(drawnJSONObject);
+            console.log(objectGeometry);
+
             if (type === 'polyline') {
-    console.log("Create " + type);
+                //Set value geometry to geometry_polyline
+                $('#geometry_polyline').val(objectGeometry);
+                console.log("Create " + type);
 
-    // Set value geometry to geometry_polyline
-    $('#geometry_polyline').val(objectGeometry);
+                $('#modalInputPolyline').modal('show');
 
-    // Show Modal Input Polyline
-    $('#modalInputPolyline').modal('show');
+                $('#modalInputPolyline').on('hidden.bs.modal', function() {
+                    location.reload();
+                });
 
-    // Reload page once after modal is closed
-    $('#modalInputPolyline').one('hidden.bs.modal', function() {
-        location.reload();
-    });
+                console.log("Create " + type);
+            } else if (type === 'polygon' || type === 'rectangle') {
+                //Set value geometry to geometry_polygon
+                $('#geometry_polygon').val(objectGeometry);
+                console.log("Create " + type);
 
-} else if (type === 'polygon' || type === 'rectangle') {
-    console.log("Create " + type);
-    // Bisa ditambahkan modal polygon jika ingin input data
+                $('#modalInputPolygon').modal('show');
 
-    // Set value geometry to geometry_polyline
-    $('#geometry_polygon').val(objectGeometry);
+                $('#modalInputPolygon').on('hidden.bs.modal', function() {
+                    location.reload();
+                });
+                console.log("Create " + type);
 
-    // Show Modal Input Polyline
-    $('#modalInputPolygon').modal('show');
+            } else if (type === 'marker') {
 
-    // Reload page once after modal is closed
-    $('#modalInputPolygon').one('hidden.bs.modal', function() {
-        location.reload();
-    });
+                //Set value geometry to geometry_point
+                $('#geometry_point').val(objectGeometry);
+                console.log("Create " + type);
 
-} else if (type === 'marker') {
-    console.log("Create " + type);
+                $('#modalInputPoint').modal('show');
 
-    // Set value geometry to geometry_point
-    $('#geometry_point').val(objectGeometry);
+                $('#modalInputPoint').on('hidden.bs.modal', function() {
+                    location.reload();
+                });
 
-    // Show Modal Input Point
-    $('#modalInputPoint').modal('show');
+            } else {
+                console.log('__undefined__');
+            }
 
-    // Reload page once after modal is closed
-    $('#modalInputPoint').one('hidden.bs.modal', function() {
-        location.reload();
-    });
-} else {
-    console.log('__undefined__');
-}
-
-drawnItems.addLayer(layer);
+            drawnItems.addLayer(layer);
         });
+
+        //Pointa Layer
+        var points = L.geoJSON(null, {
+            // Style
+
+            // onEachFeature
+            onEachFeature: function(feature, layer) {
+                // variable popup content
+                var popup_content = "Nama: " + feature.properties.name + "<br>" +
+                "Deskripsi: " + feature.properties.description + "<br>" + "Dibuat: "
+                + feature.properties.created_at;
+
+                layer.on({
+                    click: function(e) {
+                        points.bindPopup(popup_content);
+                    },
+                });
+            },
+
+        });
+
+        $.getJSON("{{ route('geojson.points') }}", function(data) {
+            points.addData(data);
+            map.addLayer(points);
+        });
+
+        //Polyline Layer
+        var polylines = L.geoJSON(null, {
+            // Style
+
+            // onEachFeature
+            onEachFeature: function(feature, layer) {
+                // variable popup content
+                var popup_content = "Nama: " + feature.properties.name + "<br>" +
+                "Deskripsi: " + feature.properties.description + "<br>" + "Dibuat: "
+                + feature.properties.created_at;
+
+                layer.on({
+                    click: function(e) {
+                        polylines.bindPopup(popup_content);
+                    },
+                });
+            },
+
+        });
+
+        $.getJSON("{{ route('geojson.polylines') }}", function(data) {
+            polylines.addData(data);
+            map.addLayer(polylines);
+        });
+
+        //Polygon Layer
+        var polygons = L.geoJSON(null, {
+            // Style
+
+            // onEachFeature
+            onEachFeature: function(feature, layer) {
+                // variable popup content
+                var popup_content = "Nama: " + feature.properties.name + "<br>" +
+                "Deskripsi: " + feature.properties.description + "<br>" + "Dibuat: "
+                + feature.properties.created_at;
+
+                layer.on({
+                    click: function(e) {
+                        polygons.bindPopup(popup_content);
+                    },
+                });
+            },
+
+        });
+
+        $.getJSON("{{ route('geojson.polygons') }}", function(data) {
+            polygons.addData(data);
+            map.addLayer(polygons);
+        });
+        // Control Layer
+        var baseMaps = {
+
+        };
+
+        var overlayMaps = {
+            "Marker": points,
+            "Polyline": polylines,
+            "Polygon": polygons,
+        };
+
+        var controllayer = L.control.layers(baseMaps, overlayMaps);
+        controllayer.addTo(map);
+
     </script>
 @endsection
