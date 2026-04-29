@@ -31,20 +31,44 @@ class PolylinesController extends Controller
             [
                 'geometry_polyline' => 'required',
                 'name' => 'required|string|max:255',
-                'description' => 'required'
+                'description' => 'required|string',
+                'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             ],
             [
-                'geometry_polyline.required'=>'Field geometry polyline harus diisi.',
-                'name.required'=>'Field nama harus diisi.',
-                'name.string'=>'Field nama harus berupa string.',
-                'name.max'=>'Field nama tidak boleh lebih dari 255 karakter.',
-                'description.required'=>'Field deskripsi harus diisi.'
+                'geometry_polyline.required'=> 'Field geometry point harus diisi.',
+                'name.required' => 'Field name harus diisi.',
+                'name.string' => 'Field name harus berupa string.',
+                'name.max' => 'Field name tidak boleh lebih dari 255 karakter.',
+                'description.string' => 'Field description harus berupa string.',
+                'image.image' => 'Field  harus berupa gambar.',
+                'image.mimes' => 'Field gambar harus berformat jpeg,png,jng.',
+                'image.max' => 'Ukuran field gambar tidak boleh lebih dari 2 MB.',
             ]
         );
+
+         // Create directory for images if it doesn't exist --> Jika direktori storage/images tidak ada (!)
+       // maka akan dibuat folder baru menggunakan mkdir dengan permission 0777 (akses penuh)
+        if (!is_dir('storage/images')) {
+            mkdir('./storage/images', 0777);
+        }
+
+        // PHP Get Image & Move --> Mengecek apakah request memiliki file 'image'.
+        // Jika ada, maka file akan diambil, diberi nama unik menggunakan time() + "_point" + extension (dibuat lowercase)
+        // kemudian dipindahkan ke folder storage/images.
+        // Jika tidak ada file yang diupload, maka variabel $name_image diisi null.
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            $name_image = time() . "_polyline." . strtolower($image->getClientOriginalExtension());
+            $image->move('storage/images', $name_image);
+            } else {
+            $name_image = null;
+        }
+
         $data = [
             'geom' => $request->geometry_polyline,
             'name' => $request->name,
             'description' => $request->description,
+            'image' => $name_image,
         ];
 
         // simpan data ke database
