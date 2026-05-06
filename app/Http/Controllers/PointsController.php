@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\pointsModel;
 use Illuminate\Http\Request;
+use App\Models\pointsModel;
 
 class PointsController extends Controller
 {
+    protected $points;
+
     public function __construct()
     {
         $this->points = new pointsModel();
@@ -51,13 +53,11 @@ class PointsController extends Controller
                 'image.max' => 'Ukuran field gambar tidak boleh lebih dari 2 MB.',
             ]
         );
-
         // Create directory for images if it doesn't exist --> Jika direktori storage/images tidak ada (!)
        // maka akan dibuat folder baru menggunakan mkdir dengan permission 0777 (akses penuh)
         if (!is_dir('storage/images')) {
-            mkdir('./storage/images', 0777);
+            mkdir('./storage/images', 0777, true);
         }
-
         // PHP Get Image & Move --> Mengecek apakah request memiliki file 'image'.
         // Jika ada, maka file akan diambil, diberi nama unik menggunakan time() + "_point" + extension (dibuat lowercase)
         // kemudian dipindahkan ke folder storage/images.
@@ -66,10 +66,9 @@ class PointsController extends Controller
             $image = $request->file('image');
             $name_image = time() . "_point." . strtolower($image->getClientOriginalExtension());
             $image->move('storage/images', $name_image);
-            } else {
+        } else {
             $name_image = null;
         }
-
 
         $data = [
             'geom' => $request->geometry_point,
@@ -81,12 +80,12 @@ class PointsController extends Controller
 
         // simpan data ke database
         if ($this->points->create($data)) {
-    return redirect()->route('peta')->with('success', 'Data point yang kamu inputkan berhasil disimpan');
-}
-
-//Kembali ke halaman peta
-return redirect()->route('peta')->with('error', 'Kamu Gagal menyimpan data point');
+            return redirect()->route('peta')->with('success', 'Data point yang kamu inputkan berhasil disimpan');
         }
+
+        //Kembali ke halaman peta
+        return redirect()->route('peta')->with('error', 'Kamu Gagal menyimpan data point');
+    }
 
     /**
      * Display the specified resource.
@@ -115,8 +114,26 @@ return redirect()->route('peta')->with('error', 'Kamu Gagal menyimpan data point
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
-    {
-        //
+public function destroy(string $id)
+{
+    // Mencari nama file gambar berdasarkan ID Point
+    $image = $this->points->find($id);
+
+    // Hapus file gambar jika ada
+    if ($image != null) {
+        if (file_exists('./storage/images/' . $image->image)) {
+            unlink('./storage/images/' . $image->image);
+        }
     }
+
+    // Hapus data dari database
+    if (!$this->points->destroy($id)) {
+        return redirect()->route('peta')
+            ->with('error', 'Gagal menghapus data point.');
+    }
+
+    // Kembali ke halaman peta
+    return redirect()->route('peta')
+        ->with('success', 'Data point berhasil dihapus.');
+}
 }
